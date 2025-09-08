@@ -1,0 +1,36 @@
+import React from 'react'
+import { useSelector } from 'react-redux'
+
+export default function LandingPage() {
+ const expenses = useSelector((state)=> state.expense.expenses)
+ console.log(expenses)
+  return (
+        <div className='h-full w-full bg-black rounded-xl px-12 pt-16 pb-8'>
+            <div className='h-full w-full gap-y-10'>
+                <div className='flex flex-col items-start justify-start gap-y-10 text-white'>
+                    <div className='flex flex-col items-center justify-center gap-y-10 text-white bg-red-500 w-full'>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                { expenses.length > 0 && expenses.map((expense)=>(
+                                    <tr key={expense.id}>
+                                        <td>{expense.amount}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    { expenses.length > 0 && expenses.map((expense)=>(
+                        <div className='flex flex-col items-center justify-center gap-y-10 text-white' key={expense.id}>
+                            
+                        </div>
+                    ))}
+                    </div>
+                </div>
+            </div>
+        </div>
+  )
+}
