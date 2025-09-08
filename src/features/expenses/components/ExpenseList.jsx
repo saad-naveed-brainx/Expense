@@ -2,11 +2,12 @@ import React, { useState } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { FaPlus, FaFilter, FaEdit, FaTrash, FaTimes, FaCheck } from "react-icons/fa";
 import { useNavigate } from 'react-router-dom'
-import { deleteExpense } from '../redux/ExpenseSlice'
+import { deleteExpense } from '../expensesSlice'
 import { CSVLink } from 'react-csv';
+import { CSV_HEADERS, EXPENSE_CATEGORIES, TRANSACTION_TYPES } from '../../../utils/constants';
+import { formatAmount, getCategoryBadgeClasses, prepareCsvData } from '../../../utils/helpers';
 
-
-export default function ExpensesScreen() {
+export default function ExpenseList() {
     const expenses = useSelector((state) => state.expense.expenses)
     const navigate = useNavigate()
     const [showDeleteModal, setShowDeleteModal] = useState(false)
@@ -24,32 +25,7 @@ export default function ExpensesScreen() {
     })
 
     const dispatch = useDispatch()
-    const formatAmount = (value) => {
-        return `$ ${Number(value || 0).toFixed(2)}`
-    }
-
-    const headers = [
-        { label: "Title", key: "title" },
-        { label: "Category", key: "category" },
-        { label: "Date", key: "date" },
-        { label: "Amount", key: "amount" },
-        { label: "Type", key: "type" },
-        { label: "Description", key: "description" },
-        { label: "Reimbersable", key: "reimbersable" },
-        { label: "CreatedAt", key: "createdAt" },
-    ]
-
-    const csvData = filteredExpenses.map(exp => ({
-        title: exp?.title || '',
-        category: exp?.category || '',
-        date: exp?.date || '',
-        amount: exp?.amount || 0,
-        type: exp?.type || '',
-        description: exp?.description || '',
-        reimbersable: exp?.reimbersable || false,
-        createdAt: exp?.createdAt || '',
-    }))
-
+    const csvData = prepareCsvData(filteredExpenses)
 
     const handleDeleteExpense = () => {
         dispatch(deleteExpense(id))
@@ -88,21 +64,6 @@ export default function ExpensesScreen() {
 
     const hasActiveFilters = filters.categories.length > 0 || filters.types.length > 0
 
-    const categoryBadgeClasses = (category) => {
-        switch ((category || '').toLowerCase()) {
-            case 'food':
-                return 'bg-indigo-900/40 text-indigo-300 '
-            case 'transport':
-                return 'bg-rose-900/40 text-rose-300'
-            case 'housing':
-                return 'bg-fuchsia-900/40 text-fuchsia-300'
-            case 'utilities':
-                return 'bg-teal-900/40 text-teal-300'
-            default:
-                return 'bg-gray-800 text-gray-300'
-        }
-    }
-
     return (
         <div className='h-full w-full bg-white dark:bg-black rounded-xl px-12 pt-16 pb-8 overflow-y-auto'>
             <div className='h-full w-full'>
@@ -117,7 +78,7 @@ export default function ExpensesScreen() {
                                 </button>
                                 <CSVLink
                                     data={csvData || []}
-                                    headers={headers}
+                                    headers={CSV_HEADERS}
                                     filename="expenses.csv"
                                     className='bg-green-300 rounded-md px-2 py-1 text-black'
                                 >
@@ -154,7 +115,6 @@ export default function ExpensesScreen() {
                         {showFilterModal && (
                             <div className='fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4'>
                                 <div className='bg-gray-900 rounded-xl w-full max-w-md max-h-[90vh] overflow-y-auto'>
-
                                     <div className='flex items-center justify-between p-6 border-b border-gray-700'>
                                         <h2 className='text-2xl font-bold text-white'>Filters</h2>
                                         <button
@@ -169,7 +129,7 @@ export default function ExpensesScreen() {
                                         <div>
                                             <h3 className='text-lg font-semibold text-white mb-3'>Categories</h3>
                                             <div className='grid grid-cols-2 gap-3'>
-                                                {['food', 'transport', 'housing', 'utilities'].map(category => (
+                                                {Object.values(EXPENSE_CATEGORIES).map(category => (
                                                     <button
                                                         key={category}
                                                         onClick={() => handleFilterChange('categories', category)}
@@ -191,7 +151,7 @@ export default function ExpensesScreen() {
                                         <div>
                                             <h3 className='text-lg font-semibold text-white mb-3'>Transaction Type</h3>
                                             <div className='grid grid-cols-2 gap-3'>
-                                                {['expense', 'income'].map(type => (
+                                                {Object.values(TRANSACTION_TYPES).map(type => (
                                                     <button
                                                         key={type}
                                                         onClick={() => handleFilterChange('types', type)}
@@ -297,7 +257,7 @@ export default function ExpensesScreen() {
                                                     <tr key={expense.id} className={`${expense.type === 'expense' ? 'bg-red-600' : 'bg-green-600'}`}>
                                                         <td className='py-4 px-6 overflow-hidden text-ellipsis whitespace-nowrap'>{expense.title || '—'}</td>
                                                         <td className='py-4 px-6'>
-                                                            <span className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-medium ${categoryBadgeClasses(expense.category)}`}>
+                                                            <span className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-medium ${getCategoryBadgeClasses(expense.category)}`}>
                                                                 {expense.category || 'Uncategorized'}
                                                             </span>
                                                         </td>
@@ -323,11 +283,9 @@ export default function ExpensesScreen() {
                                 </div>
                             </div>
                         </div>
-
                     </div>
                 </div>
             </div>
         </div>
     )
-
 }
