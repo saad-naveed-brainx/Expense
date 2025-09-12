@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { FaUserCircle, FaBars } from "react-icons/fa";
 import NavCard from "./NavCard";
-import { FaHome, FaDollarSign, FaPlus, FaList, FaCog } from "react-icons/fa";
+import { FaHome, FaDollarSign, FaCog, FaSignOutAlt } from "react-icons/fa";
 import ThemeToggleButton from "./ThemeToggleButton";
 
 const navJson = [
@@ -16,14 +16,14 @@ const navJson = [
     icon: FaDollarSign,
   },
   {
-    path: "/categories",
-    title: "Categories",
-    icon: FaList,
-  },
-  {
     path: "/settings",
     title: "Settings",
     icon: FaCog,
+  },
+  {
+    path: "/sign-out",
+    title: "Sign Out",
+    icon: FaSignOutAlt,
   },
 ];
 
@@ -87,7 +87,10 @@ export default function LeftSection() {
           </div>
         </div>
         <div className="sm:self-end sm:w-full hidden">
+
           <ThemeToggleButton />
+
+
         </div>
       </div>
     </>

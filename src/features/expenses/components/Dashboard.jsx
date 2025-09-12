@@ -2,26 +2,18 @@ import React from "react";
 import { Pie } from "react-chartjs-2";
 import { useSelector } from "react-redux";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
+import { CHART_COLORS, CHART_LABELS, RECENT_DAYS_FILTER } from "../../../utils/constants";
+import { formatAmount, getCategoryBadgeClasses, getRecentExpenses, calculateTotals } from "../../../utils/helpers";
+
 ChartJS.register(ArcElement, Tooltip, Legend);
 
-export default function LandingPage() {
+export default function Dashboard() {
     const expenses = useSelector((state) => state.expense.expenses);
-    let TotalBalance = 0;
-    let TotalExpenses = 0;
-    let TotalIncome = 0;
-
-    expenses.forEach((expense) => {
-        if (expense.type === "expense") {
-            TotalBalance -= expense.amount;
-            TotalExpenses += expense.amount;
-        } else {
-            TotalBalance += expense.amount;
-            TotalIncome += expense.amount;
-        }
-    });
+    const { totalBalance, totalExpenses, totalIncome } = calculateTotals(expenses);
+    const recentExpenses = getRecentExpenses(expenses, RECENT_DAYS_FILTER);
 
     const data = {
-        labels: ["expense", "income"],
+        labels: CHART_LABELS,
         datasets: [
             {
                 options: {
@@ -32,38 +24,11 @@ export default function LandingPage() {
                         },
                     },
                 },
-                data: [TotalExpenses, TotalIncome],
-                backgroundColor: ["red", "green"],
+                data: [totalExpenses, totalIncome],
+                backgroundColor: [CHART_COLORS.EXPENSE, CHART_COLORS.INCOME],
                 borderWidth: 0,
             },
         ],
-    };
-
-    const threeDaysAgo = new Date();
-    threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
-
-    const recentExpenses = expenses.filter((expense) => {
-        const expenseDate = new Date(expense.date);
-        return expenseDate >= threeDaysAgo;
-    });
-
-    const formatAmount = (value) => {
-        return `$ ${Number(value || 0).toFixed(2)}`;
-    };
-
-    const categoryBadgeClasses = (category) => {
-        switch ((category || "").toLowerCase()) {
-            case "food":
-                return "bg-indigo-900/40 text-indigo-300 ";
-            case "transport":
-                return "bg-rose-900/40 text-rose-300";
-            case "housing":
-                return "bg-fuchsia-900/40 text-fuchsia-300";
-            case "utilities":
-                return "bg-teal-900/40 text-teal-300";
-            default:
-                return "bg-gray-800 text-gray-300";
-        }
     };
 
     return (
@@ -82,7 +47,7 @@ export default function LandingPage() {
                                     Total Balance
                                 </h3>
                                 <p className="text-lg font-semibold dark:text-white text-black">
-                                    {formatAmount(TotalBalance)}
+                                    {formatAmount(totalBalance)}
                                 </p>
                             </div>
                         </div>
@@ -92,7 +57,7 @@ export default function LandingPage() {
                                     Total Expenses
                                 </h3>
                                 <p className="text-lg font-semibold dark:text-white text-black">
-                                    {formatAmount(TotalExpenses)}
+                                    {formatAmount(totalExpenses)}
                                 </p>
                             </div>
                         </div>
@@ -100,7 +65,7 @@ export default function LandingPage() {
                             <div className="flex items-center justify-between">
                                 <h3 className="text-lg font-semibold dark:text-white text-black">Total Income</h3>
                                 <p className="text-lg font-semibold dark:text-white text-black">
-                                    {formatAmount(TotalIncome)}
+                                    {formatAmount(totalIncome)}
                                 </p>
                             </div>
                         </div>
@@ -121,7 +86,7 @@ export default function LandingPage() {
                 <div className="w-full rounded-2xl border border-gray-800">
                     <div className="px-6 py-4 border-b border-gray-800">
                         <h2 className="text-2xl font-semibold text-black dark:text-white">
-                            Recent Expenses in past 3 days
+                            Recent Expenses in past {RECENT_DAYS_FILTER} days
                         </h2>
                     </div>
                     <div className="w-full">
@@ -171,7 +136,7 @@ export default function LandingPage() {
                                                     <td className="py-4 px-6">{expense.title || "—"}</td>
                                                     <td className="py-4 px-6">
                                                         <span
-                                                            className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-medium ${categoryBadgeClasses(
+                                                            className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-medium ${getCategoryBadgeClasses(
                                                                 expense.category
                                                             )}`}
                                                         >

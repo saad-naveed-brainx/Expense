@@ -1,16 +1,15 @@
-import {createSlice } from '@reduxjs/toolkit'
+import { createSlice } from '@reduxjs/toolkit'
 import { v4 as uuidv4 } from 'uuid'
 
-
 const initialState = {
-    expenses: localStorage.getItem('expenses') ? JSON.parse(localStorage.getItem('expenses')) : [],
+    expenses: [],
 }
 
 const expenseSlice = createSlice({
     name: 'expenseSlice',
     initialState,
-    reducers:{
-        addExpense: (state, action) =>{
+    reducers: {
+        addExpense: (state, action) => {
             const newExpense = {
                 id: uuidv4(),
                 amount: action.payload.amount,
@@ -19,36 +18,31 @@ const expenseSlice = createSlice({
                 description: action.payload.description,
                 title: action.payload.title,
                 reimbersable: action.payload.reimbersable,
-                type:action.payload.type,
+                type: action.payload.type,
                 createdAt: new Date().toISOString()
             }
             state.expenses.push(newExpense)
             state.expenses.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-            localStorage.setItem('expenses', JSON.stringify(state.expenses))    
         },
-        deleteExpense: (state, action) =>{
+        deleteExpense: (state, action) => {
             state.expenses = state.expenses.filter(expense => expense.id !== action.payload)
             state.expenses.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-            localStorage.setItem('expenses', JSON.stringify(state.expenses))
-            },
-        editExpense: (state, action) =>{
+        },
+        editExpense: (state, action) => {
             const index = state.expenses.findIndex(expense => expense.id === action.payload.id)
-            if(index !== -1){
+            if (index !== -1) {
                 state.expenses[index] = action.payload
             }
             state.expenses.reverse()
-            localStorage.setItem('expenses', JSON.stringify(state.expenses))
         },
-        updateExpenseById: (state,action)=>{
-            console.log(action.payload + "is the payload in updateExpenseById")
+        updateExpenseById: (state, action) => {
             const index = state.expenses.findIndex(expense => expense.id === action.payload.id)
-            if(index !== -1){
+            if (index !== -1) {
                 state.expenses[index] = {
                     ...state.expenses[index],
                     ...action.payload
                 }
             }
-            localStorage.setItem('expenses', JSON.stringify(state.expenses))
         }
     }
 })
