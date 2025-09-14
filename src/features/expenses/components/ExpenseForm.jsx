@@ -1,10 +1,10 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { IoMdClose } from "react-icons/io";
 import { FaPlus } from "react-icons/fa";
 import { useForm } from "react-hook-form";
 import { useDispatch, useSelector } from "react-redux";
 import { addExpense, updateExpenseById } from "../expensesSlice";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useActionData } from "react-router";
 import {
     CATEGORY_OPTIONS,
     TYPE_OPTIONS,
@@ -15,6 +15,7 @@ import {
 export default function ExpenseForm() {
     const dispatch = useDispatch();
     const navigate = useNavigate();
+    const formRef = useRef(null);
     const { id } = useParams();
 
     const expenses = useSelector((state) => state.expense.expenses);
@@ -31,7 +32,7 @@ export default function ExpenseForm() {
     useEffect(() => {
         if (id) {
             setValue("title", expense.title);
-            setValue("reimbersable", expense.reimbersable);
+            setValue("reimbursable", expense.reimbursable);
             setValue("amount", expense.amount);
             setValue("date", expense.date);
             setValue("category", expense.category);
@@ -40,14 +41,24 @@ export default function ExpenseForm() {
         }
     }, [id, expense, setValue]);
 
-    const onSubmit = (data) => {
+    const onSubmit = async (data) => {
         if (id) {
             dispatch(updateExpenseById({ id, ...data }));
         } else {
-            dispatch(addExpense(data));
+            // dispatch(addExpense(data));
+            console.log('data', data)
+            const response = await fetch('http://localhost:3000/expense/create', {
+                method: 'POST',
+                body: JSON.stringify(data),
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'include'
+            })
+            console.log('response', response)
         }
-        reset();
-        navigate(-1);
+        // reset();
+        // navigate(-1);
     };
 
     return (
@@ -97,12 +108,12 @@ export default function ExpenseForm() {
                             <div className="flex items-center gap-2 flex-1">
                                 <input
                                     type="checkbox"
-                                    name="reimbersable"
-                                    id="reimbersable"
+                                    name="reimbursable"
+                                    id="reimbursable"
                                     className="w-5 h-5 rounded-xl "
-                                    {...register("reimbersable")}
+                                    {...register("reimbursable")}
                                 />
-                                <label htmlFor="reimbersable">Reimbersable</label>
+                                <label htmlFor="reimbursable">Reimbursable</label>
                             </div>
                         </div>
                         <div className="flex gap-4 items-start">
