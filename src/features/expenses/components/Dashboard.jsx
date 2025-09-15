@@ -1,16 +1,18 @@
 import React from "react";
 import { Pie } from "react-chartjs-2";
-import { useSelector } from "react-redux";
+import { useLoaderData } from "react-router";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
-import { CHART_COLORS, CHART_LABELS, RECENT_DAYS_FILTER } from "../../../utils/constants";
-import { formatAmount, getCategoryBadgeClasses, getRecentExpenses, calculateTotals } from "../../../utils/helpers";
+import { CHART_COLORS, CHART_LABELS } from "../../../utils/constants";
+import { formatAmount, getCategoryBadgeClasses } from "../../../utils/helpers";
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
 export default function Dashboard() {
-    const expenses = useSelector((state) => state.expense.expenses);
-    const { totalBalance, totalExpenses, totalIncome } = calculateTotals(expenses);
-    const recentExpenses = getRecentExpenses(expenses, RECENT_DAYS_FILTER);
+    const loaderData = useLoaderData();
+
+    const { calculation, graphData, last3DaysExpenses } = loaderData || {};
+    const { totalBalance, totalExpense, totalIncome } = calculation || {};
+    const recentExpenses = Array.isArray(last3DaysExpenses) ? last3DaysExpenses : [];
 
     const data = {
         labels: CHART_LABELS,
@@ -24,7 +26,7 @@ export default function Dashboard() {
                         },
                     },
                 },
-                data: [totalExpenses, totalIncome],
+                data: [totalExpense || 0, totalIncome || 0],
                 backgroundColor: [CHART_COLORS.EXPENSE, CHART_COLORS.INCOME],
                 borderWidth: 0,
             },
@@ -47,7 +49,7 @@ export default function Dashboard() {
                                     Total Balance
                                 </h3>
                                 <p className="text-lg font-semibold dark:text-white text-black">
-                                    {formatAmount(totalBalance)}
+                                    {formatAmount(totalBalance || 0)}
                                 </p>
                             </div>
                         </div>
@@ -57,7 +59,7 @@ export default function Dashboard() {
                                     Total Expenses
                                 </h3>
                                 <p className="text-lg font-semibold dark:text-white text-black">
-                                    {formatAmount(totalExpenses)}
+                                    {formatAmount(totalExpense || 0)}
                                 </p>
                             </div>
                         </div>
@@ -65,7 +67,7 @@ export default function Dashboard() {
                             <div className="flex items-center justify-between">
                                 <h3 className="text-lg font-semibold dark:text-white text-black">Total Income</h3>
                                 <p className="text-lg font-semibold dark:text-white text-black">
-                                    {formatAmount(totalIncome)}
+                                    {formatAmount(totalIncome || 0)}
                                 </p>
                             </div>
                         </div>
@@ -86,7 +88,7 @@ export default function Dashboard() {
                 <div className="w-full rounded-2xl border border-gray-800">
                     <div className="px-6 py-4 border-b border-gray-800">
                         <h2 className="text-2xl font-semibold text-black dark:text-white">
-                            Recent Expenses in past {RECENT_DAYS_FILTER} days
+                            Recent Expenses in past 3 days
                         </h2>
                     </div>
                     <div className="w-full">
@@ -127,7 +129,7 @@ export default function Dashboard() {
                                         {recentExpenses && recentExpenses.length > 0 ? (
                                             recentExpenses.map((expense) => (
                                                 <tr
-                                                    key={expense.id}
+                                                    key={expense._id}
                                                     className={`${expense.type === "expense"
                                                         ? "bg-red-600"
                                                         : "bg-green-600"
@@ -159,7 +161,10 @@ export default function Dashboard() {
                                                     className="py-8 px-6 text-center text-gray-400"
                                                     colSpan={4}
                                                 >
-                                                    No expenses yet
+                                                    {loaderData?.success === false ?
+                                                        'Please sign in to view your dashboard data.' :
+                                                        'No expenses yet'
+                                                    }
                                                 </td>
                                             </tr>
                                         )}

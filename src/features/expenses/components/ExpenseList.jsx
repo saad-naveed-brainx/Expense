@@ -1,14 +1,25 @@
 import React, { useState } from 'react'
-import { useSelector, useDispatch } from 'react-redux'
 import { FaPlus, FaFilter, FaEdit, FaTrash, FaTimes, FaCheck } from "react-icons/fa";
-import { useNavigate } from 'react-router-dom'
-import { deleteExpense } from '../expensesSlice'
+import { useNavigate, useLoaderData } from 'react-router-dom'
 import { CSVLink } from 'react-csv';
 import { CSV_HEADERS, EXPENSE_CATEGORIES, TRANSACTION_TYPES } from '../../../utils/constants';
 import { formatAmount, getCategoryBadgeClasses, prepareCsvData } from '../../../utils/helpers';
 
 export default function ExpenseList() {
-    const expenses = useSelector((state) => state.expense.expenses)
+    const loaderData = useLoaderData()
+    console.log('loaderData', loaderData)
+
+    let expenses = [];
+    if (loaderData) {
+        if (Array.isArray(loaderData)) {
+            expenses = loaderData;
+        } else if (Array.isArray(loaderData.data)) {
+            expenses = loaderData.data;
+        } else if (loaderData.success === false) {
+            expenses = [];
+        }
+    }
+
     const navigate = useNavigate()
     const [showDeleteModal, setShowDeleteModal] = useState(false)
     const [showFilterModal, setShowFilterModal] = useState(false)
@@ -24,11 +35,23 @@ export default function ExpenseList() {
         return categoryMatch && typeMatch
     })
 
-    const dispatch = useDispatch()
     const csvData = prepareCsvData(filteredExpenses)
 
-    const handleDeleteExpense = () => {
-        dispatch(deleteExpense(id))
+    const handleDeleteExpense = async () => {
+        try {
+            const response = await fetch(`http://localhost:3000/expense/delete/${id}`, {
+                method: 'DELETE',
+                credentials: 'include'
+            })
+
+            if (response.ok) {
+                navigate('/expenses', { replace: true })
+            } else {
+                console.error('Failed to delete expense')
+            }
+        } catch (error) {
+            console.error('Error deleting expense:', error)
+        }
         setShowDeleteModal(false)
     }
 
@@ -254,7 +277,7 @@ export default function ExpenseList() {
                                         <tbody className='divide-y divide-gray-800 text-gray-200'>
                                             {filteredExpenses && filteredExpenses.length > 0 ? (
                                                 filteredExpenses.map((expense) => (
-                                                    <tr key={expense.id} className={`${expense.type === 'expense' ? 'bg-red-600' : 'bg-green-600'}`}>
+                                                    <tr key={expense._id} className={`${expense.type === 'expense' ? 'bg-red-600' : 'bg-green-600'}`}>
                                                         <td className='py-4 px-6 overflow-hidden text-ellipsis whitespace-nowrap'>{expense.title || '—'}</td>
                                                         <td className='py-4 px-6'>
                                                             <span className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-medium ${getCategoryBadgeClasses(expense.category)}`}>
@@ -264,10 +287,10 @@ export default function ExpenseList() {
                                                         <td className='py-4 px-6'>{expense.date ? new Date(expense.date).toLocaleDateString() : '—'}</td>
                                                         <td className='py-4 px-6 text-left font-semibold'>{formatAmount(expense.amount)}</td>
                                                         <td className='py-4 px-6 font-semibold flex items-center gap-8'>
-                                                            <button className='text-green-300 cursor-pointer' onClick={() => { handleEditExpense(expense.id); }}>
+                                                            <button className='text-green-300 cursor-pointer' onClick={() => { handleEditExpense(expense._id); }}>
                                                                 <FaEdit className='text-2xl' />
                                                             </button>
-                                                            <button className='text-red-300 cursor-pointer' onClick={() => { setShowDeleteModal(true); setId(expense.id) }}>
+                                                            <button className='text-red-300 cursor-pointer' onClick={() => { setShowDeleteModal(true); setId(expense._id) }}>
                                                                 <FaTrash className='text-2xl' />
                                                             </button>
                                                         </td>
@@ -275,7 +298,12 @@ export default function ExpenseList() {
                                                 ))
                                             ) : (
                                                 <tr>
-                                                    <td className='py-8 px-6 text-center text-gray-400' colSpan={5}>No expenses yet</td>
+                                                    <td className='py-8 px-6 text-center text-gray-400' colSpan={5}>
+                                                        {loaderData?.success === false && loaderData?.message ?
+                                                            `${loaderData.message}. Please sign in to view your expenses.` :
+                                                            'No expenses yet'
+                                                        }
+                                                    </td>
                                                 </tr>
                                             )}
                                         </tbody>

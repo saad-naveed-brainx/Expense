@@ -1,10 +1,10 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useState } from "react";
 import { IoMdClose } from "react-icons/io";
 import { FaPlus } from "react-icons/fa";
 import { useForm } from "react-hook-form";
 import { useDispatch, useSelector } from "react-redux";
 import { addExpense, updateExpenseById } from "../expensesSlice";
-import { useNavigate, useParams, useActionData } from "react-router";
+import { useNavigate, useParams, useActionData, useLoaderData } from "react-router";
 import {
     CATEGORY_OPTIONS,
     TYPE_OPTIONS,
@@ -15,11 +15,11 @@ import {
 export default function ExpenseForm() {
     const dispatch = useDispatch();
     const navigate = useNavigate();
-    const formRef = useRef(null);
     const { id } = useParams();
+    const [errorMessage, setErrorMessage] = useState('');
+    const loaderData = useLoaderData();
 
-    const expenses = useSelector((state) => state.expense.expenses);
-    const expense = expenses.find((expense) => expense.id === id);
+    const expense = id ? loaderData : null;
 
     const {
         register,
@@ -30,11 +30,11 @@ export default function ExpenseForm() {
     } = useForm();
 
     useEffect(() => {
-        if (id) {
+        if (id && expense) {
             setValue("title", expense.title);
             setValue("reimbursable", expense.reimbursable);
             setValue("amount", expense.amount);
-            setValue("date", expense.date);
+            setValue("date", expense.date ? expense.date.split('T')[0] : '');
             setValue("category", expense.category);
             setValue("type", expense.type);
             setValue("description", expense.description);
@@ -43,10 +43,28 @@ export default function ExpenseForm() {
 
     const onSubmit = async (data) => {
         if (id) {
-            dispatch(updateExpenseById({ id, ...data }));
+            try {
+                const response = await fetch(`http://localhost:3000/expense/update/${id}`, {
+                    method: 'PUT',
+                    body: JSON.stringify(data),
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include'
+                });
+                const responseData = await response.json();
+                if (responseData.success) {
+                    reset();
+                    navigate('/expenses', { replace: true });
+                } else {
+                    setErrorMessage('Failed to update expense');
+                }
+            } catch (error) {
+                console.error('Error updating expense:', error);
+                setErrorMessage('Failed to update expense');
+            }
         } else {
             // dispatch(addExpense(data));
-            console.log('data', data)
             const response = await fetch('http://localhost:3000/expense/create', {
                 method: 'POST',
                 body: JSON.stringify(data),
@@ -55,18 +73,46 @@ export default function ExpenseForm() {
                 },
                 credentials: 'include'
             })
-            console.log('response', response)
+            const responseData = await response.json()
+            if (responseData.success) {
+                reset();
+                navigate('/expenses', { replace: true });
+            } else {
+                setErrorMessage('Please login first to start adding expenses')
+            }
         }
-        // reset();
-        // navigate(-1);
     };
 
+
     return (
-        <div className="dark:bg-black bg-white rounded-xl h-full flex flex-col py-8 px-12 dark:text-white text-black gap-5 overflow-y-auto">
+        <div className="dark:bg-black bg-white rounded-xl h-full flex flex-col py-8 px-12 dark:text-white text-black gap-5 overflow-y-auto relative">
+            {errorMessage && (
+                <div className="fixed inset-0 bg-gray-500/50 flex items-center justify-center z-50">
+                    <div className="dark:bg-gray-800 bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
+                        <div className="flex items-center justify-between mb-4">
+                            <h1 className="dark:text-white text-black text-2xl font-bold">Error</h1>
+                            <button onClick={() => setErrorMessage('')} className="dark:text-gray-400 text-gray-600 hover:dark:text-white hover:text-black transition-colors">
+                                <IoMdClose className="text-2xl" />
+                            </button>
+                        </div>
+                        <div className="mb-6">
+                            <p className="text-red-500 text-center">{errorMessage}</p>
+                        </div>
+                        <div className="flex justify-end">
+                            <button
+                                onClick={() => navigate("/settings/signin")}
+                                className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md transition-colors"
+                            >
+                                Go to Sign In
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
             <div className="flex flex-col gap-8">
                 <div className="flex items-center justify-between">
                     <h1 className="dark:text-white text-black text-4xl font-bold">New Expense</h1>
-                    <button onClick={() => navigate(-1)} className="dark:text-white text-black">
+                    <button onClick={() => navigate('/expenses', { replace: true })} className="dark:text-white text-black">
                         <IoMdClose className="text-4xl" />
                     </button>
                 </div>

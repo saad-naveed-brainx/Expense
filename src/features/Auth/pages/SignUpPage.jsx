@@ -46,7 +46,7 @@ export default function SignUpPage() {
                             <div className='flex items-center justify-center gap-4'>
                                 <button
                                     type="button"
-                                    onClick={() => navigate('/signin')}
+                                    onClick={() => navigate('/settings/signin')}
                                     className='bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-6 rounded-lg transition-colors duration-200'
                                 >
                                     Sign In Now
