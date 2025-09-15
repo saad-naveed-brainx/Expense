@@ -11,6 +11,7 @@ import {
     VALIDATION_REGEX,
     VALIDATION_MESSAGES
 } from "../../../utils/constants";
+import { api } from '../../../api/client.js';
 
 export default function ExpenseForm() {
     const dispatch = useDispatch();
@@ -44,15 +45,7 @@ export default function ExpenseForm() {
     const onSubmit = async (data) => {
         if (id) {
             try {
-                const response = await fetch(`http://localhost:3000/expense/update/${id}`, {
-                    method: 'PUT',
-                    body: JSON.stringify(data),
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    credentials: 'include'
-                });
-                const responseData = await response.json();
+                const responseData = await api.put(`/expense/update/${id}`, data);
                 if (responseData.success) {
                     reset();
                     navigate('/expenses', { replace: true });
@@ -64,21 +57,17 @@ export default function ExpenseForm() {
                 setErrorMessage('Failed to update expense');
             }
         } else {
-            // dispatch(addExpense(data));
-            const response = await fetch('http://localhost:3000/expense/create', {
-                method: 'POST',
-                body: JSON.stringify(data),
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                credentials: 'include'
-            })
-            const responseData = await response.json()
-            if (responseData.success) {
-                reset();
-                navigate('/expenses', { replace: true });
-            } else {
-                setErrorMessage('Please login first to start adding expenses')
+            try {
+                const responseData = await api.post('/expense/create', data);
+                if (responseData.success) {
+                    reset();
+                    navigate('/expenses', { replace: true });
+                } else {
+                    setErrorMessage('Please login first to start adding expenses')
+                }
+            } catch (error) {
+                console.error('Error creating expense:', error);
+                setErrorMessage('Failed to create expense');
             }
         }
     };

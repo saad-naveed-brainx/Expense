@@ -1,16 +1,10 @@
+import { api } from '../../api/client.js';
+
 export const loadData = async () => {
     try {
         console.log("going to make an api call")
-        const response = await fetch('http://localhost:3000/expense/all', {
-            credentials: 'include'
-        })
+        const data = await api.get('/expense/all');
         console.log("api call made")
-
-        if (!response.ok) {
-            return { success: false, data: [], message: 'Authentication required' }
-        }
-
-        const data = await response.json()
 
         if (data && data.success === false) {
             return { success: false, data: [], message: data.message || 'No data available' }
@@ -19,7 +13,7 @@ export const loadData = async () => {
         return data
     } catch (error) {
         console.log('error', error)
-        return { success: false, data: [], message: 'Network error' }
+        return { success: false, data: [], message: error.message || 'Network error' }
     }
 }
 
@@ -27,31 +21,20 @@ export const loadData = async () => {
 export const loadExpenseById = async ({ params }) => {
     const { id } = params
     console.log('id', id)
-    const response = await fetch(`http://localhost:3000/expense/${id}`, {
-        credentials: 'include'
-    })
-    const data = await response.json()
-    console.log('data', data)
-    return data
+    try {
+        const data = await api.get(`/expense/${id}`);
+        console.log('data', data)
+        return data
+    } catch (error) {
+        console.log('error', error)
+        return { success: false, message: error.message || 'Failed to load expense' }
+    }
 }
 
 
 export const loadDashboardData = async () => {
     try {
-        const response = await fetch('http://localhost:3000/expense/dashboard', {
-            credentials: 'include'
-        })
-
-        if (!response.ok) {
-            return {
-                success: false,
-                calculation: { totalBalance: 0, totalExpense: 0, totalIncome: 0 },
-                graphData: { expense: 0, income: 0 },
-                last3DaysExpenses: []
-            }
-        }
-
-        const data = await response.json()
+        const data = await api.get('/expense/dashboard');
         console.log("data", data)
 
         if (data && data.success === false) {

@@ -4,6 +4,7 @@ import { useNavigate, useLoaderData } from 'react-router-dom'
 import { CSVLink } from 'react-csv';
 import { CSV_HEADERS, EXPENSE_CATEGORIES, TRANSACTION_TYPES } from '../../../utils/constants';
 import { formatAmount, getCategoryBadgeClasses, prepareCsvData } from '../../../utils/helpers';
+import { api } from '../../../api/client.js';
 
 export default function ExpenseList() {
     const loaderData = useLoaderData()
@@ -39,16 +40,8 @@ export default function ExpenseList() {
 
     const handleDeleteExpense = async () => {
         try {
-            const response = await fetch(`http://localhost:3000/expense/delete/${id}`, {
-                method: 'DELETE',
-                credentials: 'include'
-            })
-
-            if (response.ok) {
-                navigate('/expenses', { replace: true })
-            } else {
-                console.error('Failed to delete expense')
-            }
+            await api.delete(`/expense/delete/${id}`);
+            navigate('/expenses', { replace: true })
         } catch (error) {
             console.error('Error deleting expense:', error)
         }

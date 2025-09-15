@@ -1,3 +1,5 @@
+import { api } from '../../../api/client.js';
+
 export const signUpAction = async ({ request }) => {
     const formData = await request.formData();
     const name = (formData.get('name') || '').trim();
@@ -30,21 +32,7 @@ export const signUpAction = async ({ request }) => {
     }
 
     try {
-        const response = await fetch('http://localhost:3000/auth/create-user', {
-            method: 'POST',
-            body: JSON.stringify({ name, email, password }),
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        });
-
-        if (!response.ok) {
-            const errorData = await response.json();
-            return {
-                responseError: errorData.message || 'Failed to create user',
-                formData: { name, email }
-            };
-        }
+        await api.post('/auth/create-user', { name, email, password });
         return { success: true };
 
     } catch (error) {
@@ -64,7 +52,6 @@ export const signInAction = async ({ request }) => {
 
     const errors = {};
 
-    // Validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!email) {
         errors.emailError = 'Email is required';
@@ -77,56 +64,32 @@ export const signInAction = async ({ request }) => {
     } else if (password.length < 6) {
         errors.passwordError = 'Password must be at least 6 characters long';
     }
-
-    // Return validation errors if any
     if (Object.keys(errors).length > 0) {
         return { ...errors, formData: { email } };
     }
 
     try {
-        const response = await fetch('http://localhost:3000/auth/sign-in', {
-            method: 'POST',
-            body: JSON.stringify({ email, password }),
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            credentials: 'include'
-        });
-
-        console.log('response', response);
-
-        if (!response.ok) {
-            const errorData = await response.json();
-
-            if (response.status === 404) {
-                return {
-                    responseError: 'Account not found. Please check your email or sign up.',
-                    formData: { email }
-                };
-            } else if (response.status === 429) {
-                return {
-                    responseError: 'Too many login attempts. Please try again later.',
-                    formData: { email }
-                };
-            } else {
-                return {
-                    responseError: errorData.message || 'Failed to sign in. Please try again.',
-                    formData: { email }
-                };
-            }
-        }
-
-        const userData = await response.json();
+        const userData = await api.post('/auth/sign-in', { email, password });
         console.log('userData', userData);
 
-        // Redirect to dashboard on success
         return { success: true, user: userData.user };
 
     } catch (error) {
-        console.error('Network error:', error);
+        console.error('Sign in error:', error);
 
-        // Handle different types of network errors
-        if (error.name === 'TypeError' && error.message.includes('fetch')) {
+        const errorMessage = error.message;
+
+        if (errorMessage.includes('not found')) {
+            return {
+                responseError: 'Account not found. Please check your email or sign up.',
+                formData: { email }
+            };
+        } else if (errorMessage.includes('many requests')) {
+            return {
+                responseError: 'Too many login attempts. Please try again later.',
+                formData: { email }
+            };
+        } else if (errorMessage.includes('connect')) {
             return {
                 responseError: 'Unable to connect to server. Please check your internet connection.',
                 formData: { email }
@@ -134,7 +97,7 @@ export const signInAction = async ({ request }) => {
         }
 
         return {
-            responseError: 'Network error occurred. Please try again.',
+            responseError: errorMessage || 'Failed to sign in. Please try again.',
             formData: { email }
         };
     }

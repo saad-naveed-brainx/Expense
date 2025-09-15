@@ -10,6 +10,9 @@ export const EXPENSE_CATEGORIES = {
   UTILITIES: 'utilities'
 };
 
+
+export const BASE_URL = 'http://localhost:3000';
+
 export const CATEGORY_OPTIONS = [
   { value: EXPENSE_CATEGORIES.FOOD, label: 'Food' },
   { value: EXPENSE_CATEGORIES.TRANSPORT, label: 'Transport' },

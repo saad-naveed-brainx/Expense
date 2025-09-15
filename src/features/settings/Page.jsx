@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLoaderData } from 'react-router';
+import { api } from '../../api/client.js';
 
 export default function SettingsPage() {
     const navigate = useNavigate();
@@ -14,13 +15,7 @@ export default function SettingsPage() {
 
         const signOut = async () => {
             try {
-                const response = await fetch('http://localhost:3000/auth/sign-out', {
-                    method: 'POST',
-                    credentials: 'include'
-                })
-                if (!response.ok) {
-                    throw new Error('Failed to sign out')
-                }
+                await api.post('/auth/sign-out');
                 navigate('/settings')
             } catch (error) {
                 console.error('Sign out error:', error)
