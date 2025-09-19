@@ -6,7 +6,6 @@ export default function ThemeEffect() {
 
     useEffect(() => {
         const root = document.documentElement;
-        console.log('effect is running');
         if (isDarkMode) {
             root.classList.add('dark');
         } else {

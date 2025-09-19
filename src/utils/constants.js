@@ -13,12 +13,26 @@ export const EXPENSE_CATEGORIES = {
 
 export const BASE_URL = 'http://localhost:3000';
 
-export const CATEGORY_OPTIONS = [
+export const INCOME_CATEGORIES = {
+  SALARY: 'salary',
+  INVESTMENT: 'investment',
+  OTHER: 'other'
+};
+
+export const EXPENSE_CATEGORY_OPTIONS = [
   { value: EXPENSE_CATEGORIES.FOOD, label: 'Food' },
   { value: EXPENSE_CATEGORIES.TRANSPORT, label: 'Transport' },
   { value: EXPENSE_CATEGORIES.HOUSING, label: 'Housing' },
   { value: EXPENSE_CATEGORIES.UTILITIES, label: 'Utilities' }
 ];
+
+export const INCOME_CATEGORY_OPTIONS = [
+  { value: INCOME_CATEGORIES.SALARY, label: 'Salary' },
+  { value: INCOME_CATEGORIES.INVESTMENT, label: 'Investment' },
+  { value: INCOME_CATEGORIES.OTHER, label: 'Other' }
+];
+
+export const CATEGORY_OPTIONS = EXPENSE_CATEGORY_OPTIONS;
 
 export const TYPE_OPTIONS = [
   { value: TRANSACTION_TYPES.EXPENSE, label: 'Expense' },
@@ -38,7 +52,8 @@ export const VALIDATION_MESSAGES = {
   DATE_REQUIRED: 'Date is required',
   DATE_FUTURE: 'Date must not be in future',
   CATEGORY_REQUIRED: 'Category must be selected',
-  TYPE_REQUIRED: 'Type is required'
+  TYPE_REQUIRED: 'Type is required',
+  DESCRIPTION_REQUIRED: 'Description is required'
 };
 
 export const CATEGORY_STYLES = {

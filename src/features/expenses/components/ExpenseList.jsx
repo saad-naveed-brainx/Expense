@@ -1,5 +1,6 @@
-import React, { useState } from 'react'
-import { FaPlus, FaFilter, FaEdit, FaTrash, FaTimes, FaCheck } from "react-icons/fa";
+import React, { useState, useEffect } from 'react'
+import { FaPlus, FaFilter, FaEdit, FaTrash, FaTimes, FaCheck, FaSearch } from "react-icons/fa";
+import { MdOutlineClose } from "react-icons/md";
 import { useNavigate, useLoaderData } from 'react-router-dom'
 import { CSVLink } from 'react-csv';
 import { CSV_HEADERS, EXPENSE_CATEGORIES, TRANSACTION_TYPES } from '../../../utils/constants';
@@ -8,35 +9,145 @@ import { api } from '../../../api/client.js';
 
 export default function ExpenseList() {
     const loaderData = useLoaderData()
-    console.log('loaderData', loaderData)
 
-    let expenses = [];
-    if (loaderData) {
-        if (Array.isArray(loaderData)) {
-            expenses = loaderData;
-        } else if (Array.isArray(loaderData.data)) {
-            expenses = loaderData.data;
-        } else if (loaderData.success === false) {
-            expenses = [];
+    const [expenses, setExpenses] = useState([]);
+    const [filteredExpenses, setFilteredExpenses] = useState([]);
+    const [paginatedExpenses, setPaginatedExpenses] = useState([]);
+
+    const [searchText, setSearchText] = useState('');
+
+    useEffect(() => {
+        if (loaderData) {
+            if (Array.isArray(loaderData.expenses)) {
+                console.log('loaderData if running', loaderData.expenses);
+                setExpenses(loaderData.expenses);
+                setHasMore(loaderData.hasMore)
+            } else if (Array.isArray(loaderData.data.expenses)) {
+                console.log('loaderData else if running', loaderData.data.expenses);
+                setExpenses(loaderData.data.expenses);
+                setHasMore(loaderData.data.hasMore)
+            } else if (loaderData.success === false) {
+                console.log('loaderData else if running', loaderData.data.expenses);
+                setExpenses([]);
+                setHasMore(false)
+            }
         }
-    }
+    }, [loaderData]);
 
     const navigate = useNavigate()
     const [showDeleteModal, setShowDeleteModal] = useState(false)
+    const [isLoading, setIsLoading] = useState(false)
     const [showFilterModal, setShowFilterModal] = useState(false)
+    const [hasMore, setHasMore] = useState(true)
     const [id, setId] = useState(null)
     const [filters, setFilters] = useState({
         categories: [],
         types: []
     })
+    const [makeCall, setMakeCall] = useState(false)
+    const [showSearchField, setShowSearchField] = useState(false)
+    const [page, setPage] = useState(1)
+    const [limit, setLimit] = useState(2)
 
-    const filteredExpenses = expenses.filter(exp => {
-        const categoryMatch = filters.categories.length === 0 || filters.categories.includes(exp.category)
-        const typeMatch = filters.types.length === 0 || filters.types.includes(exp.type)
-        return categoryMatch && typeMatch
-    })
+    const fetchExpenses = async (isLoadMore = false) => {
+        try {
+            setIsLoading(true)
 
-    const csvData = prepareCsvData(filteredExpenses)
+            const currentPage = isLoadMore ? page : 1;
+            const params = {
+                page: currentPage,
+                limit: limit
+            };
+
+            if (searchText && searchText.trim() !== '') {
+                params.title = searchText.trim();
+            }
+
+            if (filters.categories.length > 0) {
+                params.category = filters.categories.join(',');
+            }
+
+            if (filters.types.length > 0) {
+                params.type = filters.types.join(',');
+            }
+
+            console.log('Params object:', params);
+            const data = await api.get('/expense/all', params);
+            console.log('data', data);
+
+            const hasActiveFilters = (searchText && searchText.trim() !== '') ||
+                filters.categories.length > 0 ||
+                filters.types.length > 0;
+
+            if (hasActiveFilters) {
+                if (isLoadMore) {
+                    setFilteredExpenses(prev => [...prev, ...data.expenses]);
+                } else {
+                    setFilteredExpenses(data.expenses);
+                }
+                setExpenses([]);
+            } else {
+                if (isLoadMore) {
+                    setExpenses(prev => [...prev, ...data.expenses]);
+                } else {
+                    setExpenses(data.expenses);
+                }
+                setFilteredExpenses([]);
+            }
+
+            setHasMore(data.hasMore);
+            setIsLoading(false)
+        } catch (error) {
+            console.error('Error fetching expenses:', error);
+            setExpenses([]);
+            setFilteredExpenses([]);
+            setHasMore(false)
+            setIsLoading(false)
+        }
+    };
+
+    useEffect(() => {
+        const hasActiveFilters = searchText.trim() !== '' ||
+            filters.categories.length > 0 ||
+            filters.types.length > 0;
+
+        if (!hasActiveFilters && page === 1) {
+            if (loaderData) {
+                if (Array.isArray(loaderData.expenses)) {
+                    console.log('Using loaderData.expenses:', loaderData.expenses);
+                    setExpenses(loaderData.expenses);
+                    setFilteredExpenses([]);
+                    setHasMore(loaderData.hasMore);
+                } else if (Array.isArray(loaderData.data?.expenses)) {
+                    console.log('Using loaderData.data.expenses:', loaderData.data.expenses);
+                    setExpenses(loaderData.data.expenses);
+                    setFilteredExpenses([]);
+                    setHasMore(loaderData.data.hasMore);
+                } else {
+                    console.log('No valid expenses found in loaderData');
+                    setExpenses([]);
+                    setFilteredExpenses([]);
+                    setHasMore(false);
+                }
+            }
+            return;
+        }
+
+        const timeout = setTimeout(() => {
+            setPage(1);
+            fetchExpenses(false);
+        }, 500);
+
+        return () => clearTimeout(timeout);
+    }, [searchText, filters.categories, filters.types, loaderData, makeCall]);
+
+    useEffect(() => {
+        if (page > 1) {
+            fetchExpenses(true);
+        }
+    }, [page]);
+
+    const csvData = prepareCsvData(expenses)
 
     const handleDeleteExpense = async () => {
         try {
@@ -75,13 +186,34 @@ export default function ExpenseList() {
         setFilters({
             categories: [],
             types: []
-        })
+        });
+        setSearchText('');
+        setPage(1);
+        setShowSearchField(false);
     }
 
-    const hasActiveFilters = filters.categories.length > 0 || filters.types.length > 0
+
+    const loadMore = () => {
+        if (hasMore) {
+            setPage(prev => prev + 1)
+        }
+    }
+
+
+
+    const hasActiveFilters = filters.categories.length > 0 || filters.types.length > 0 || searchText.trim() !== ''
 
     return (
         <div className='h-full w-full bg-white dark:bg-black rounded-xl px-12 pt-16 pb-8 overflow-y-auto'>
+            {isLoading && (
+                <div className="absolute inset-0 bg-white/80 dark:bg-black/80 flex items-center justify-center z-50 rounded-xl">
+                    <div className="flex flex-col items-center gap-4">
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-600 dark:border-gray-400"></div>
+                        <p className="text-gray-600 dark:text-gray-400 text-lg">Loading...</p>
+                    </div>
+                </div>
+            )}
+
             <div className='h-full w-full'>
                 <div className='dark:text-white text-black'>
                     <div className='w-full rounded-2xl border border-gray-800'>
@@ -114,6 +246,35 @@ export default function ExpenseList() {
                                         </span>
                                     )}
                                 </button>
+                                {
+                                    !showSearchField && (
+                                        <button className='bg-green-300 rounded-md px-2 py-1 text-black' onClick={() => setShowSearchField(!showSearchField)}>
+                                            <FaSearch className='text-lg' />
+                                        </button>
+                                    )
+                                }
+                                <div className={`overflow-hidden transition-all duration-500 ease-in-out ${showSearchField
+                                    ? 'max-w-xs opacity-100 transform translate-x-0'
+                                    : 'max-w-0 opacity-0 transform -translate-x-4'
+                                    }`}>
+                                    <div className='flex items-center gap-2 bg-gray-200 rounded-md px-2 py-1 text-black whitespace-nowrap'>
+                                        <input
+                                            type="text"
+                                            placeholder="Search"
+                                            value={searchText}
+                                            onChange={(e) => setSearchText(e.target.value)}
+                                            className='bg-gray-200 rounded-md px-2 py-1 text-black outline-none w-60 transition-all duration-300'
+                                            autoFocus={showSearchField}
+                                        />
+                                        <button onClick={() => {
+                                            setSearchText('');
+                                            setShowSearchField(false);
+                                            setPage(1);
+                                        }} className='hover:bg-gray-300 bg-white rounded-md p-1 transition-colors duration-200'>
+                                            <MdOutlineClose className='text-lg' />
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         {showDeleteModal && (
@@ -134,7 +295,7 @@ export default function ExpenseList() {
                                     <div className='flex items-center justify-between p-6 border-b border-gray-700'>
                                         <h2 className='text-2xl font-bold text-white'>Filters</h2>
                                         <button
-                                            onClick={() => setShowFilterModal(false)}
+                                            onClick={() => { setShowFilterModal(false); setMakeCall(!makeCall) }}
                                             className='text-gray-400 hover:text-white transition-colors'
                                         >
                                             <FaCheck className='text-xl' />
@@ -289,6 +450,27 @@ export default function ExpenseList() {
                                                         </td>
                                                     </tr>
                                                 ))
+                                            ) : expenses && expenses.length > 0 ? (
+                                                expenses.map((expense) => (
+                                                    <tr key={expense._id} className={`${expense.type === 'expense' ? 'bg-red-600' : 'bg-green-600'}`}>
+                                                        <td className='py-4 px-6 overflow-hidden text-ellipsis whitespace-nowrap'>{expense.title || '—'}</td>
+                                                        <td className='py-4 px-6'>
+                                                            <span className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-medium ${getCategoryBadgeClasses(expense.category)}`}>
+                                                                {expense.category || 'Uncategorized'}
+                                                            </span>
+                                                        </td>
+                                                        <td className='py-4 px-6'>{expense.date ? new Date(expense.date).toLocaleDateString() : '—'}</td>
+                                                        <td className='py-4 px-6 text-left font-semibold'>{formatAmount(expense.amount)}</td>
+                                                        <td className='py-4 px-6 font-semibold flex items-center gap-8'>
+                                                            <button className='text-green-300 cursor-pointer' onClick={() => { handleEditExpense(expense._id); }}>
+                                                                <FaEdit className='text-2xl' />
+                                                            </button>
+                                                            <button className='text-red-300 cursor-pointer' onClick={() => { setShowDeleteModal(true); setId(expense._id) }}>
+                                                                <FaTrash className='text-2xl' />
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                ))
                                             ) : (
                                                 <tr>
                                                     <td className='py-8 px-6 text-center text-gray-400' colSpan={5}>
@@ -305,6 +487,11 @@ export default function ExpenseList() {
                             </div>
                         </div>
                     </div>
+                    {hasMore && (
+                        <button onClick={loadMore} className='bg-amber-200 px-4 py-2 mt-10 text-black rounded-md self-center w-full'>
+                            See More
+                        </button>
+                    )}
                 </div>
             </div>
         </div>

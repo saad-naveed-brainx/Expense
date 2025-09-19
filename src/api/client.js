@@ -11,12 +11,12 @@ const apiClient = axios.create({
 
 
 export const api = {
-    get: async (route) => {
+    get: async (route, params = {}) => {
         try {
-            const response = await apiClient.get(route);
+            const response = await apiClient.get(route, { params });
             return response.data;
         } catch (error) {
-            throw new Error(error.response?.data?.message || error.message || 'Request failed');
+            throw error;
         }
     },
 

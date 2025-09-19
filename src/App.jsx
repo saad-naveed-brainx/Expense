@@ -10,21 +10,21 @@ import SignUpPage from './features/Auth/pages/SignUpPage'
 import SettingsPage from './features/settings/Page'
 import { signInAction, signUpAction } from './features/Auth/components/ActionMethods'
 import SignInPage from './features/Auth/pages/SignInPage'
-import { settingsLoaderMethod } from './features/settings/SettingsLoaderMethod'
 import { loadData, loadExpenseById, loadDashboardData } from './features/expenses/LoadData'
+import { isLoggedInLoader } from './features/Auth/components/LoaderMethods'
 
 function App() {
   const router = createBrowserRouter(
     createRoutesFromElements(
       <Route path='/' element={<RootLayout />}>
         <Route index element={<DashboardPage />} loader={loadDashboardData} />
+        <Route path='signup' element={<SignUpPage />} action={signUpAction} loader={isLoggedInLoader} />
+        <Route path='signin' element={<SignInPage />} action={signInAction} loader={isLoggedInLoader} />
         <Route path='expenses' element={<ExpenseListPage />} loader={loadData} />
         <Route path='expenses/new' element={<ExpenseFormPage />} />
         <Route path='expenses/new/:id' element={<ExpenseFormPage />} loader={loadExpenseById} />
-        <Route path='settings' element={<SettingsPage />} loader={settingsLoaderMethod} />
-        <Route path='settings/signup' element={<SignUpPage />} action={signUpAction} />
-        <Route path='settings/signin' element={<SignInPage />} action={signInAction} />
         <Route path='sign-out' element={<NotUsed pageName="Sign Out" />} />
+        <Route path='*' element={<NotUsed />} />
       </Route>
     )
   )

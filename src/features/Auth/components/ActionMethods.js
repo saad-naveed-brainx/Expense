@@ -70,7 +70,6 @@ export const signInAction = async ({ request }) => {
 
     try {
         const userData = await api.post('/auth/sign-in', { email, password });
-        console.log('userData', userData);
 
         return { success: true, user: userData.user };
 

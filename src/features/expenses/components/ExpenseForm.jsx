@@ -2,23 +2,23 @@ import React, { useEffect, useState } from "react";
 import { IoMdClose } from "react-icons/io";
 import { FaPlus } from "react-icons/fa";
 import { useForm } from "react-hook-form";
-import { useDispatch, useSelector } from "react-redux";
-import { addExpense, updateExpenseById } from "../expensesSlice";
-import { useNavigate, useParams, useActionData, useLoaderData } from "react-router";
+import { useNavigate, useParams, useLoaderData } from "react-router";
 import {
-    CATEGORY_OPTIONS,
+    EXPENSE_CATEGORY_OPTIONS,
+    INCOME_CATEGORY_OPTIONS,
     TYPE_OPTIONS,
     VALIDATION_REGEX,
-    VALIDATION_MESSAGES
+    VALIDATION_MESSAGES,
+    TRANSACTION_TYPES
 } from "../../../utils/constants";
 import { api } from '../../../api/client.js';
 
 export default function ExpenseForm() {
-    const dispatch = useDispatch();
     const navigate = useNavigate();
     const { id } = useParams();
     const [errorMessage, setErrorMessage] = useState('');
     const loaderData = useLoaderData();
+
 
     const expense = id ? loaderData : null;
 
@@ -28,7 +28,21 @@ export default function ExpenseForm() {
         formState: { errors },
         reset,
         setValue,
+        watch,
     } = useForm();
+
+    const selectedType = watch("type");
+
+    const getCategoryOptions = () => {
+        if (selectedType === TRANSACTION_TYPES.INCOME) {
+            return INCOME_CATEGORY_OPTIONS;
+        } else if (selectedType === TRANSACTION_TYPES.EXPENSE) {
+            return EXPENSE_CATEGORY_OPTIONS;
+        }
+        return [];
+    };
+
+    const categoryOptions = getCategoryOptions();
 
     useEffect(() => {
         if (id && expense) {
@@ -36,11 +50,20 @@ export default function ExpenseForm() {
             setValue("reimbursable", expense.reimbursable);
             setValue("amount", expense.amount);
             setValue("date", expense.date ? expense.date.split('T')[0] : '');
-            setValue("category", expense.category);
             setValue("type", expense.type);
             setValue("description", expense.description);
         }
     }, [id, expense, setValue]);
+
+    useEffect(() => {
+        if (selectedType) {
+            if (id && expense && categoryOptions.some(option => option.value === expense.category)) {
+                setValue("category", expense.category);
+            } else {
+                setValue("category", "");
+            }
+        }
+    }, [selectedType, setValue, id, expense, categoryOptions]);
 
     const onSubmit = async (data) => {
         if (id) {
@@ -186,29 +209,6 @@ export default function ExpenseForm() {
                                 )}
                             </div>
                         </div>
-                        <div className="flex gap-4 items-center">
-                            <h1 className="text-2xl w-32 shrink-0">Category*</h1>
-                            <div className="flex-1 flex flex-col gap-1">
-                                <select
-                                    className="dark:bg-gray-700 bg-gray-200 rounded-md p-3 w-full dark:text-white text-black"
-                                    {...register("category", {
-                                        required: VALIDATION_MESSAGES.CATEGORY_REQUIRED,
-                                    })}
-                                >
-                                    <option value="" className="dark:text-gray-300 text-gray-600">
-                                        Select Category
-                                    </option>
-                                    {CATEGORY_OPTIONS.map(option => (
-                                        <option key={option.value} value={option.value}>{option.label}</option>
-                                    ))}
-                                </select>
-                                {errors.category && (
-                                    <p className="text-red-500 text-sm">
-                                        {errors.category.message}
-                                    </p>
-                                )}
-                            </div>
-                        </div>
                         <div className="flex gap-4 items-start">
                             <h1 className="text-2xl w-32 shrink-0">Type*</h1>
                             <div className="w-full flex flex-col gap-2">
@@ -228,15 +228,45 @@ export default function ExpenseForm() {
                                 )}
                             </div>
                         </div>
+                        <div className="flex gap-4 items-center">
+                            <h1 className="text-2xl w-32 shrink-0">Category*</h1>
+                            <div className="flex-1 flex flex-col gap-1">
+                                <select
+                                    className="dark:bg-gray-700 bg-gray-200 rounded-md p-3 w-full dark:text-white text-black"
+                                    {...register("category", {
+                                        required: VALIDATION_MESSAGES.CATEGORY_REQUIRED,
+                                    })}
+                                >
+                                    <option value="" className="dark:text-gray-300 text-black">
+                                        Select Category
+                                    </option>
+                                    {categoryOptions.map(option => (
+                                        <option key={option.value} value={option.value}>{option.label}</option>
+                                    ))}
+                                </select>
+                                {errors.category && (
+                                    <p className="text-red-500 text-sm">
+                                        {errors.category.message}
+                                    </p>
+                                )}
+                            </div>
+                        </div>
                         <div className="flex gap-4 items-start">
                             <h1 className="text-2xl w-32 shrink-0">Description</h1>
-                            <textarea
-                                rows="8"
-                                type="text"
-                                placeholder="Enter Description"
-                                className="dark:bg-gray-700 bg-gray-200 rounded-md p-2 flex-1 min-w-0 dark:placeholder:text-gray-300 placeholder:text-gray-600 dark:text-white text-black"
-                                {...register("description")}
-                            />
+                            <div className="w-full flex flex-col gap-2">
+                                <textarea
+                                    rows="8"
+                                    type="text"
+                                    placeholder="Enter Description"
+                                    className="dark:bg-gray-700 bg-gray-200 rounded-md p-2 flex-1 min-w-0 dark:placeholder:text-gray-300 placeholder:text-gray-600 dark:text-white text-black"
+                                    {...register("description", {
+                                        required: VALIDATION_MESSAGES.DESCRIPTION_REQUIRED,
+                                    })}
+                                />
+                                {errors.description && (
+                                    <p className="text-red-500 text-sm">{errors.description.message}</p>
+                                )}
+                            </div>
                         </div>
                     </form>
                 </div>

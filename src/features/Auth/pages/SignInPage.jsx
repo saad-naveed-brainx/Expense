@@ -1,13 +1,20 @@
 import React, { useEffect } from 'react';
 import { Form, useActionData, useNavigation, useNavigate } from 'react-router';
 import { IoMdArrowBack, IoMdCheckmarkCircle } from 'react-icons/io';
+import { useDispatch } from 'react-redux';
+import { login } from '../AuthSlice';
 
 export default function SignInPage() {
     const navigate = useNavigate();
     const actionData = useActionData();
     const navigation = useNavigation();
+    const dispatch = useDispatch();
 
     const { emailError, passwordError, responseError, success, formData, user } = actionData || {};
+    if (user) {
+        dispatch(login(user));
+    }
+
     const isSubmitting = navigation.state === 'submitting';
 
     useEffect(() => {
@@ -18,18 +25,9 @@ export default function SignInPage() {
             return () => clearTimeout(timer);
         }
     }, [success, navigate]);
+
     return (
         <div className="relative h-full w-full flex items-center justify-center bg-white dark:bg-black rounded-xl px-12 pt-16 pb-8">
-            <div className="absolute top-6 left-6">
-                <button
-                    type="button"
-                    onClick={() => navigate('/settings')}
-                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors shadow border border-gray-300 dark:border-gray-700 font-medium"
-                >
-                    <IoMdArrowBack className="text-2xl" />
-                    Back
-                </button>
-            </div>
 
             {success && (
                 <div className='fixed inset-0 flex items-center justify-center bg-black/50 z-50'>
@@ -53,8 +51,8 @@ export default function SignInPage() {
                         Log in to your account to get started
                     </p>
                 </div>
-                <Form action='/settings/signin' method='post' className='flex flex-col gap-4 w-full'>
-                    <div className='flex flex-col gap-2'>
+                <Form action='/signin' method='post' className='flex flex-col gap-4 w-full'>
+                <div className='flex flex-col gap-2'>
                         <label htmlFor="email" className='text-sm font-medium text-black dark:text-white'>
                             Email Address
                         </label>
@@ -118,7 +116,7 @@ export default function SignInPage() {
                     <p className='text-gray-600 dark:text-gray-400 text-sm'>
                         Don't have an account?{' '}
                         <button
-                            onClick={() => navigate('/settings/signup')}
+                            onClick={() => navigate('/signup')}
                             className='text-green-500 hover:text-green-600 font-medium transition-colors duration-200'
                         >
                             Sign Up

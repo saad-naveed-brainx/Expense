@@ -13,7 +13,7 @@ export default function SignUpPage() {
     useEffect(() => {
         if (success) {
             const timer = setTimeout(() => {
-                navigate('/settings/signup');
+                navigate('/signup');
             }, 2000);
             return () => clearTimeout(timer);
         }
@@ -21,17 +21,6 @@ export default function SignUpPage() {
 
     return (
         <div className="relative h-full w-full flex items-center justify-center bg-white dark:bg-black rounded-xl px-12 pt-16 pb-8">
-            <div className="absolute top-6 left-6">
-                <button
-                    type="button"
-                    onClick={() => navigate('/settings/signin')}
-                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors shadow border border-gray-300 dark:border-gray-700 font-medium"
-                >
-                    <IoMdArrowBack className="text-2xl" />
-                    Back
-                </button>
-            </div>
-
             {success && (
                 <div className='fixed inset-0 flex items-center justify-center bg-black/50 z-50'>
                     <div className='bg-white dark:bg-gray-800 rounded-xl p-8 mx-4 max-w-md w-full shadow-2xl'>
@@ -63,7 +52,7 @@ export default function SignUpPage() {
                         Create your account to get started
                     </p>
                 </div>
-                <Form action="/settings/signup" method="post" className='flex flex-col gap-4 w-full'>
+                <Form action="/signup" method="post" className='flex flex-col gap-4 w-full'>
                     <div className='flex flex-col gap-2'>
                         <label htmlFor="name" className='text-sm font-medium text-black dark:text-white'>
                             Full Name
@@ -146,7 +135,7 @@ export default function SignUpPage() {
                 <div className='text-center'>
                     <p className='text-gray-600 dark:text-gray-400 text-sm'>
                         Already have an account?{' '}
-                        <a href="/settings/signin" className='text-green-500 hover:text-green-600 font-medium transition-colors duration-200'>
+                        <a href="/signin" className='text-green-500 hover:text-green-600 font-medium transition-colors duration-200'>
                             Sign In
                         </a>
                     </p>
