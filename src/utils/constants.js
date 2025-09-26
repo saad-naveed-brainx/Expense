@@ -11,7 +11,9 @@ export const EXPENSE_CATEGORIES = {
 };
 
 
-export const BASE_URL = 'http://localhost:3000';
+// export const BASE_URL = 'http://localhost:3000';
+export const BASE_URL = 'https://expense-tracking-backend.brainxdemo.com/api/v1';
+
 
 export const INCOME_CATEGORIES = {
   SALARY: 'salary',
