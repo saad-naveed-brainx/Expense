@@ -9,31 +9,9 @@ import { api } from '../../../api/client.js';
 
 export default function ExpenseList() {
     const loaderData = useLoaderData()
-
     const [expenses, setExpenses] = useState([]);
     const [filteredExpenses, setFilteredExpenses] = useState([]);
-    const [paginatedExpenses, setPaginatedExpenses] = useState([]);
-
     const [searchText, setSearchText] = useState('');
-
-    useEffect(() => {
-        if (loaderData) {
-            if (Array.isArray(loaderData.expenses)) {
-                console.log('loaderData if running', loaderData.expenses);
-                setExpenses(loaderData.expenses);
-                setHasMore(loaderData.hasMore)
-            } else if (Array.isArray(loaderData.data.expenses)) {
-                console.log('loaderData else if running', loaderData.data.expenses);
-                setExpenses(loaderData.data.expenses);
-                setHasMore(loaderData.data.hasMore)
-            } else if (loaderData.success === false) {
-                console.log('loaderData else if running', loaderData.data.expenses);
-                setExpenses([]);
-                setHasMore(false)
-            }
-        }
-    }, [loaderData]);
-
     const navigate = useNavigate()
     const [showDeleteModal, setShowDeleteModal] = useState(false)
     const [isLoading, setIsLoading] = useState(false)
@@ -47,12 +25,24 @@ export default function ExpenseList() {
     const [makeCall, setMakeCall] = useState(false)
     const [showSearchField, setShowSearchField] = useState(false)
     const [page, setPage] = useState(1)
-    const [limit, setLimit] = useState(2)
+    const limit = 3;
+
+    useEffect(() => {
+        if (loaderData) {
+            if (Array.isArray(loaderData.expenses)) {
+                console.log('loaderData if running', loaderData.expenses);
+                setExpenses(loaderData.expenses);
+                setHasMore(loaderData.hasMore)
+            }
+        }
+    }, [loaderData]);
+
+
 
     const fetchExpenses = async (isLoadMore = false) => {
         try {
             setIsLoading(true)
-
+            console.log("has more", hasMore);
             const currentPage = isLoadMore ? page : 1;
             const params = {
                 page: currentPage,
@@ -73,7 +63,6 @@ export default function ExpenseList() {
 
             console.log('Params object:', params);
             const data = await api.get('/expense/all', params);
-            console.log('data', data);
 
             const hasActiveFilters = (searchText && searchText.trim() !== '') ||
                 filters.categories.length > 0 ||
@@ -118,16 +107,6 @@ export default function ExpenseList() {
                     setExpenses(loaderData.expenses);
                     setFilteredExpenses([]);
                     setHasMore(loaderData.hasMore);
-                } else if (Array.isArray(loaderData.data?.expenses)) {
-                    console.log('Using loaderData.data.expenses:', loaderData.data.expenses);
-                    setExpenses(loaderData.data.expenses);
-                    setFilteredExpenses([]);
-                    setHasMore(loaderData.data.hasMore);
-                } else {
-                    console.log('No valid expenses found in loaderData');
-                    setExpenses([]);
-                    setFilteredExpenses([]);
-                    setHasMore(false);
                 }
             }
             return;
@@ -139,7 +118,7 @@ export default function ExpenseList() {
         }, 500);
 
         return () => clearTimeout(timeout);
-    }, [searchText, filters.categories, filters.types, loaderData, makeCall]);
+    }, [searchText, loaderData, makeCall]);
 
     useEffect(() => {
         if (page > 1) {
